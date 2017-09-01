@@ -56,12 +56,12 @@
                         </el-option>
                     </el-select>
                 </el-form-item>
-                <el-form-item label="设备归属" :label-width="formLabelWidth">
-                    <el-radio-group v-model="form.isBasic">
-                        <el-radio :label="1">普通设备</el-radio>
-                        <el-radio :label="2">子设备</el-radio>
-                    </el-radio-group>
-                </el-form-item>
+                <!-- <el-form-item label="设备归属" :label-width="formLabelWidth">
+                                                                                    <el-radio-group v-model="form.isBasic">
+                                                                                        <el-radio :label="1">普通设备</el-radio>
+                                                                                        <el-radio :label="2">子设备</el-radio>
+                                                                                    </el-radio-group>
+                                                                                </el-form-item> -->
 
                 <el-form-item label="设备名称" :label-width="formLabelWidth">
                     <el-input v-model="form.equipmentName" auto-complete="off"></el-input>
@@ -98,9 +98,7 @@
 
                 <el-form-item label="状态" :label-width="formLabelWidth">
                     <el-radio-group v-model="form.equipmentStatus">
-                        <el-radio>正常</el-radio>
-                        <el-radio>维修中</el-radio>
-                        <el-radio>报废</el-radio>
+                        <el-radio v-for="(item, index) in status" :key="index" :label="item"></el-radio>
                     </el-radio-group>
                 </el-form-item>
 
@@ -122,6 +120,18 @@
                     </el-date-picker>
                 </el-form-item>
 
+                <el-form-item label="设备描述" :label-width="formLabelWidth">
+                    <el-input type="textarea" :rows="2" placeholder="请输入设备描述" v-model="form.equipmentDesc">
+                    </el-input>
+                </el-form-item>
+
+                <el-form-item label="技术资料" :label-width="formLabelWidth">
+                    <el-upload action="/mashWebServices/fileService?attarchType=asset" :on-preview="handleFilePreview" :on-remove="handleFileRemove" :file-list="fileList" :data="uploadSetting.data" :headers="uploadSetting.headers" :on-success="handleUploadSuccess">
+                        <el-button size="small" type="primary">点击上传</el-button>
+                        <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
+                    </el-upload>
+                </el-form-item>
+
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click="dialogFormVisible = false">取 消</el-button>
@@ -133,6 +143,8 @@
 
 <script>
 import { query } from '../../../apis/userdefined'
+import config from '../../../config.js'
+
 
 export default {
     name: 'Assets',
@@ -149,11 +161,23 @@ export default {
             areas: [],
             systems: [],
             departments: [],
+            status: ['正常', '维修中', '报废'],
             pickerOptions: {
                 disabledDate(time) {
                     return time.getTime() < Date.now() - 8.64e7
                 }
             },
+            uploadSetting: {
+                headers: {
+                    SessionID: config.getSessionId(),
+                    'X-Method-Name': 'uploadFile'
+                },
+
+                data: {
+
+                }
+            },
+            fileList: [],
             form: {
                 equipmentID: '',
                 equipmentName: '',
@@ -164,7 +188,7 @@ export default {
                 systemID: '',
                 system: '',
                 equipmentModel: '',
-                equipmentStatus: '',
+                equipmentStatus: '正常',
                 purchaseDate: '',
                 area: '',
                 department: '',
@@ -229,16 +253,31 @@ export default {
                 this.departments = r.data.object
             }
 
-            for(var key in this.form){
-                 this.form[key] = row[key]
+            for (var key in this.form) {
+                this.form[key] = row[key]
             }
         },
 
-        handleDelete(index, row) {
-
+        async handleDelete(index, row) {
+            this.$confirm('此操作将永久删除该设备, 是否继续?', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                this.$message({
+                    type: 'success',
+                    message: '删除成功!'
+                });
+            }).catch(() => {
+                this.$message({
+                    type: 'info',
+                    message: '已取消删除'
+                });
+            });
         },
 
         handleEditSave() {
+            console.log(this.fileList)
             this.dialogFormVisible = false
             console.log(this.form)
         },
@@ -264,7 +303,20 @@ export default {
         handleCurrentChange(val) {
             this.currentPage = val
             this.queryAssets()
+        },
+
+        handleFileRemove(file, fileList) {
+            // console.log(file, fileList)
+        },
+        handleFilePreview(file) {
+            // console.log(file)
+        },
+
+        handleUploadSuccess(response, file, fileList) {
+             console.log(1)
+             console.log(fileList)
         }
+
     }
 }
 </script>
@@ -284,6 +336,25 @@ export default {
             margin-bottom: 0;
             width: 50%;
         }
+    }
+
+    .el-dialog {
+        // height: 70%;
+        // position: relative;
+        // padding-top: 38px;
+        // padding-bottom: 61px;
+        // .el-dialog__header {
+        //     position: absolute;
+        //     top: 0;
+        // }
+        // .el-dialog__body {
+        //     overflow-y: auto;
+        //     height: 100%;
+        // }
+        // .el-dialog__footer {
+        //     position: absolute;
+        //     bottom: 0;
+        // }
     }
 }
 </style>
